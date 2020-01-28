@@ -3,9 +3,10 @@ const replaceLast = require('replace-last');
 const acme = require('acme-client');
 const objHash = require('object-hash');
 const randomString = require("randomstring");
-const CONFIG = require(__dirname + '/modules/config');
-const alidns = require(__dirname + '/providers/alidns');
-const logger = require(__dirname + '/modules/logger');
+const CONFIG = require(__dirname + '/config');
+let logger;{let _ = require(__dirname + '/logger');logger = _('Apply');}
+const common = require(__dirname + '/common');
+const alidns = require(__dirname + '/../providers/alidns_new');
 let storage = {};
 
 const apply = {
@@ -13,18 +14,15 @@ const apply = {
         let type = CONFIG['identifiers'][name].type;
         switch (type) {
             case "alidns":
-                return new alidns();
+                return alidns;
             default:
                 process.exit();
         }
     },
 
-    async run(domainData, hash) {
+    async run(domainData, hash, cb) {
         let altNames = [];
-        let records = domainData.records;
-        for (let record in records) {
-            altNames.push(((records[record] === '@') ? '' : (records[record] + '.')) + domainData.host);
-        }
+        altNames = common.getAltName(domainData);
         logger.info('Alt names: ', altNames);
         let allDomains = altNames;
 
@@ -32,13 +30,24 @@ const apply = {
             commonName: altNames.shift(),
             altNames: altNames,
         });
+        let domainList = [];
+        for (let domain in domainData) domainList.push(domain);
 
         const cert = await this.auto({
             csr,
             email: CONFIG.email,
             termsOfServiceAgreed: true,
             challengeCreateFn: (authz, challenge, keyAuthorization) => {
-                return this.challengeCreateFn(authz, challenge, keyAuthorization, domainData.host);
+                let host = '';
+                domainList.forEach((domain) => {
+                    let index = authz.identifier.value.indexOf(domain);
+                    if (index !== -1 && ((index + domain.length) === authz.identifier.value.length))
+                    {
+                        host = domain;
+                        return;
+                    }
+                });
+                return this.challengeCreateFn(authz, challenge, keyAuthorization, host);
             },
             challengeRemoveFn: this.challengeRemoveFn,
             challengePriority: ['dns-01'],
@@ -49,17 +58,24 @@ const apply = {
         // logger.debug(`Private key:\n`, key.toString());
         // logger.debug(`Certificate:\n`, cert);
 
-        let path = __dirname + '/certs/' + hash + '/'
+        let path = __dirname + '/..//certs/' + hash + '/';
+        let certInfo = {
+            notBefore: (new Date()).getTime(),
+            notAfter: (new Date()).getTime() + 5184000000,
+            certHash: objHash({ cert: cert, ket: key.toString() }),
+            domainHash: objHash(allDomains),
+            altNames: altNames,
+            commonName: allDomains[0],
+        };
         if (!fs.existsSync(path)) fs.mkdirSync(path);
         fs.writeFileSync(path + 'cert.pem', cert);
         fs.writeFileSync(path + 'key.pem', key);
-        fs.writeFileSync(path + 'info.json', JSON.stringify({
-            notBefore: (new Date()).getTime(),
-            notAfter: (new Date()).getTime() + 5184000000,
-            hash: objHash({ cert: cert, ket: key.toString() }),
-            altNames: altNames,
-            commonName: allDomains[0],
-        }));
+        // fs.writeFileSync(path + 'info.json', JSON.stringify(certInfo));
+        try {
+            cb(certInfo);
+        } catch (e) {
+            throw new Error(e);
+        }
     },
 
     challengeCreateFn(authz, challenge, keyAuthorization, host) {
@@ -79,8 +95,8 @@ const apply = {
             host,
             CONFIG.identifiers[CONFIG.domains[host]],
             (res) => {
-                logger.info(`Record ${dnsRecord} created`);
-                logger.debug(res);
+                logger.info(`Record ${dnsRecord + host} created`);
+                // logger.debug(res);
                 storage[randomStr] = {
                     that: this,
                     res: res,
@@ -94,7 +110,9 @@ const apply = {
     challengeRemoveFn(randomStr) {
         let res = storage[randomStr];
         if (!res) return;
-        res.that.dnsCaller(CONFIG.domains[res.res.domain]).deleteRecord(res.res, (res) => logger.debug('Removed record: ', res));
+        res.that.dnsCaller(CONFIG.domains[res.res.domain]).deleteRecord(res.res, (res) => {
+            // logger.debug('Removed record: ', res);
+        });
         delete storage[randomStr];
     },
 
@@ -199,10 +217,13 @@ const apply = {
                     await client.verifyChallenge(authz, challenge);
                 }
 
+                logger.info('Wait 10s for DNS varifing');
                 await new Promise(r => setTimeout(r, 10000));
 
+                logger.info('Completing chanllenges');
                 await client.completeChallenge(challenge);
                 await client.waitForValidStatus(challenge);
+                logger.info('Challenges completed');
             } finally {
                 /* Trigger challengeRemoveFn(), suppress errors */
                 logger.debug(`[${d}] Trigger challengeRemoveFn()`);

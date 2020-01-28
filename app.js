@@ -1,25 +1,64 @@
 const fs = require('fs');
-const apply = require(__dirname + '/apply');
+const crypto = require('crypto');
 const objHash = require('object-hash');
+const apply = require(__dirname + '/modules/apply');
 const CONFIG = require(__dirname + '/modules/config');
-let CERTS = {};
+let logger;{let _ = require(__dirname + '/modules/logger');logger = _('App');}
+const common = require(__dirname + '/modules/common');
+const dataPath = __dirname + '/certs/data.json';
 
-if (!fs.existsSync(__dirname + '/certs/data.json'))
-{
-    fs.writeFileSync(__dirname + '/certs/data.json', '{}');
-    CERTS = {};
-} else {
-    CERTS = fs.readFileSync(__dirname + '/certs/data.json').toString();
-    CERTS = JSON.parse(CERTS);
+const getAllCerts = () => {
+    if (!fs.existsSync(dataPath)) {
+        fs.writeFileSync(dataPath, '{}');
+    }
+    let cert = fs.readFileSync(dataPath);
+    return JSON.parse(cert);
+};
+
+const updateInfo = (hash, certInfo) => {
+    let file = fs.readFileSync(dataPath);
+    file = JSON.parse(file);
+    file[hash] = certInfo;
+
+    fs.writeFileSync(dataPath, JSON.stringify(file));
+};
+
+const applyNew = (cert, nameHash, name) => {
+    logger.info('Starting applying process for cert ', name);
+    apply.run(cert, nameHash, (certInfo) => {
+        logger.info(`Applying process for name ${name} completed`);
+        logger.info('Cert name hash:', nameHash);
+        updateInfo(nameHash, certInfo);
+    });
 }
 
-CONFIG.certs.forEach((cert) => {
-    let hash = objHash(cert);
-    let info = CERTS[hash]
-    if (info && (info.notAfter > (3600 * 24 * 10 + (new Date()).getTime())))
-    {
-        return;
-    }
+const checkAll = () => {
+    let CERTS = getAllCerts();
+    logger.debug('Checking all certs...');
+    for (let name in CONFIG.certs) {
+        let cert = CONFIG.certs[name];
+        logger.debug('Checking cert:', name);
+        logger.debug('Cert altnames:', common.getAltName(cert));
+        let nameHash = crypto.createHash('md5').update(name).digest('hex');
+        let domainHash = objHash(common.getAltName(cert));
+        logger.debug('Cert domains\' hash:', domainHash);
 
-    apply.run(cert, hash);
-});
+        let info = CERTS[nameHash];
+        if (!info)
+        {
+            applyNew(cert, nameHash, name);
+            continue;
+        }
+        logger.debug('Cert name hash: ', nameHash);
+        let expTime = 3600 * 24 * 10 * 1000 + (new Date()).getTime();
+        if ((domainHash !== info.domainHash) || !(info && (info.notAfter > expTime)))
+        {
+            applyNew(cert, nameHash, name);
+            continue;
+        }
+
+        logger.info('Check pass');
+    }
+}
+
+checkAll();
