@@ -89,22 +89,23 @@ const apply = {
         logger.debug('DNS Value: ', dnsValue);
         let randomStr = randomString.generate(6);
 
-        this.dnsCaller(CONFIG.domains[host]).createRecord(
-            dnsRecord,
-            dnsValue,
-            host,
-            CONFIG.identifiers[CONFIG.domains[host]],
-            (res) => {
-                logger.info(`Record ${dnsRecord + host} created`);
-                // logger.debug(res);
-                storage[randomStr] = {
-                    that: this,
-                    res: res,
-                };
-            }
-        );
-        
-        return randomStr;
+        return new Promise((resolve) => {
+            this.dnsCaller(CONFIG.domains[host]).createRecord(
+                dnsRecord,
+                dnsValue,
+                host,
+                CONFIG.identifiers[CONFIG.domains[host]],
+                (res) => {
+                    logger.info(`Record ${dnsRecord + host} created`);
+                    // logger.debug(res);
+                    storage[randomStr] = {
+                        that: this,
+                        res: res,
+                    };
+                    resolve(randomStr);
+                }
+            );
+        });
     },
 
     challengeRemoveFn(randomStr) {
@@ -220,10 +221,10 @@ const apply = {
                 logger.info('Wait 10s for DNS varifing');
                 await new Promise(r => setTimeout(r, 10000));
 
-                logger.info('Completing chanllenges');
+                logger.info('Completing chanllenge');
                 await client.completeChallenge(challenge);
                 await client.waitForValidStatus(challenge);
-                logger.info('Challenges completed');
+                logger.info('Challenge completed');
             } finally {
                 /* Trigger challengeRemoveFn(), suppress errors */
                 logger.debug(`[${d}] Trigger challengeRemoveFn()`);

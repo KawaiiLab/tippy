@@ -23,16 +23,16 @@ const updateInfo = (hash, certInfo) => {
     fs.writeFileSync(dataPath, JSON.stringify(file));
 };
 
-const applyNew = (cert, nameHash, name) => {
+const applyNew = async (cert, nameHash, name) => {
     logger.info('Starting applying process for cert ', name);
-    apply.run(cert, nameHash, (certInfo) => {
+    await apply.run(cert, nameHash, (certInfo) => {
         logger.info(`Applying process for name ${name} completed`);
         logger.info('Cert name hash:', nameHash);
         updateInfo(nameHash, certInfo);
     });
 }
 
-const checkAll = () => {
+const checkAll = async () => {
     let CERTS = getAllCerts();
     logger.debug('Checking all certs...');
     for (let name in CONFIG.certs) {
@@ -46,14 +46,14 @@ const checkAll = () => {
         let info = CERTS[nameHash];
         if (!info)
         {
-            applyNew(cert, nameHash, name);
+            await applyNew(cert, nameHash, name);
             continue;
         }
         logger.debug('Cert name hash: ', nameHash);
         let expTime = 3600 * 24 * 10 * 1000 + (new Date()).getTime();
         if ((domainHash !== info.domainHash) || !(info && (info.notAfter > expTime)))
         {
-            applyNew(cert, nameHash, name);
+            await applyNew(cert, nameHash, name);
             continue;
         }
 
