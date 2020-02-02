@@ -26,10 +26,11 @@ const apply = {
         logger.info('Alt names: ', altNames);
         let allDomains = altNames;
 
-        const [key, csr] = await acme.forge.createCsr({
+        let [key, csr] = await acme.forge.createCsr({
             commonName: altNames.shift(),
             altNames: altNames,
         });
+        key = key.toString().replace("\r\n", "\n");
         let domainList = [];
         for (let domain in domainData) domainList.push(domain);
 
