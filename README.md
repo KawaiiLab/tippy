@@ -40,17 +40,13 @@
     ```JavaScript
     const api = require(__dirname + '/../functions/azure/api');
 
-    module.exports = (context, req) => {
-        api(context, req);
-    }
+    module.exports = api;
     ```
 
     ```JavaScript
     require(__dirname + '/../functions/azure/core');
 
-    module.exports = async function (context, myTimer) {
-        
-    };
+    module.exports = () => {};
     ```
 
 4. 在平台工具中打开 `高级工具(Kudu)` 并在页面中的 `Debug Console` 创建并修改 `config.json`
@@ -65,7 +61,7 @@
 ## 配置
 
 Example:
-```json
+```JSON
 {
     "logLevel": "debug",
     "email": "i@amxiaol.in",
