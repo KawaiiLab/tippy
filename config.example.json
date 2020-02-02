@@ -1,8 +1,9 @@
 {
-    "host": "ssl.xiaolin.in",
-    "port": 8123,
     "logLevel": "debug",
     "email": "i@amxiaol.in",
+    "tokens": [
+        "abc123!@#"
+    ],
     "identifiers": {
         "alidns": {
             "type": "alidns",
