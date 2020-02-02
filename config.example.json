@@ -4,7 +4,7 @@
     "tokens": [
         "abc123!@#"
     ],
-    "identifiers": {
+    "providers": {
         "alidns": {
             "type": "alidns",
             "accessKeyId": "",

@@ -11,7 +11,7 @@ let storage = {};
 
 const apply = {
     dnsCaller(name) {
-        let type = CONFIG['identifiers'][name].type;
+        let type = CONFIG['providers'][name].type;
         switch (type) {
             case "alidns":
                 return alidns;
@@ -95,7 +95,7 @@ const apply = {
                 dnsRecord,
                 dnsValue,
                 host,
-                CONFIG.identifiers[CONFIG.domains[host]],
+                CONFIG.providers[CONFIG.domains[host]],
                 (res) => {
                     logger.info(`Record ${dnsRecord + host} created`);
                     // logger.debug(res);
