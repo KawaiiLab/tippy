@@ -20,7 +20,7 @@
     "acme-client": "^3.3.1",
     "child_process": "^1.0.2",
     "crypto": "^1.0.1",
-    "jsrsasign": "^8.0.12",
+    "jsrsasign": "^8.0.19",
     "jsrsasign-util": "^1.0.0",
     "log4js": "^6.1.0",
     "object-hash": "^2.0.1",
