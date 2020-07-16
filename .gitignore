@@ -1,3 +1,5 @@
 /config.js
+/client/config.json
+/client/data.json
 node_modules/
 cert/
