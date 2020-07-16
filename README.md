@@ -36,8 +36,15 @@
 
 ### 服务端
 
-1. 打开[这里](https://fc.console.aliyun.com/fc/applications/cn-hongkong/webCreate), 选择 `Node.Js`, `Express`, `使用示例程序` 并创建 (`应用配置信息` 无需修改)
-2. 在应用列表选择刚刚创建的函数, 点击 `资源`, 并点击 `服务/函数` 中第一个
+1. 打开[这里](https://fc.console.aliyun.com/fc/service/cn-hongkong/certman/functions), 在左上角选择新建服务并创建
+2. 进入服务, 点击 `新建函数` 创建函数
+  - 选择 `HTTP 函数`
+  - **运行环境** `nodejs12`
+  - **函数入口** `app_ali.handler`
+  - **超时时间至少** `120s`
+  - **单实例并发度** `2 或以上`
+  - **认证方式** `anonymous`
+  - **请求方式** `GET POST`
 3. 在函数管理页面中, 在概况中将超时时间设置为至少 120 秒, 函数入口修改为 `app_ali.handler`, 点击小箭头返回上一级 `服务管理`
 4. 在服务管理的 `服务配置` 中修改配置
   - 开启 `网络配置->允许函数访问 VPC 内资源`(需自行创建同地域下的 VPC) 并选择 VPC
