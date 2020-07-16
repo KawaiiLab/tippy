@@ -1,0 +1,38 @@
+{
+  "name": "certman",
+  "version": "1.0.0",
+  "description": "## 简介",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isXiaoLin/CertMan.git"
+  },
+  "author": "XiaoLin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/isXiaoLin/CertMan/issues"
+  },
+  "homepage": "https://github.com/isXiaoLin/CertMan#readme",
+  "devDependencies": {
+    "eslint": "^7.3.1",
+    "eslint-plugin-markdown": "^1.0.2",
+    "pkg": "^4.4.9",
+    "standard": "^14.3.4"
+  },
+  "dependencies": {
+    "acme-client": "^4.0.0",
+    "copy-to": "^2.0.1",
+    "crypto": "^1.0.1",
+    "fs": "0.0.1-security",
+    "log4js": "^6.3.0",
+    "object-hash": "^2.0.3",
+    "p-queue": "^6.5.0",
+    "randomstring": "^1.1.5",
+    "raw-body": "^2.4.1",
+    "replace-last": "^1.2.6",
+    "request": "^2.88.2"
+  }
+}
