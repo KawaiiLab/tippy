@@ -1,4 +1,4 @@
-const configData = require('../config.js')
+const configData = require('./../../config')
 
 module.exports = (pathString = '', defaultValue = '') => {
   const splitedString = pathString.trim().split('.')

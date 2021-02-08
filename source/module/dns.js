@@ -1,5 +1,6 @@
 const config = require('./config')
-const ProviderAli = require('./provider/alidns')
+const ProviderAli = require('./provider/Alidns')
+const ProviderCloudflare = require('./provider/Cloudflaredns')
 const logger = require('./logger')
 
 module.exports = {
@@ -11,11 +12,10 @@ module.exports = {
     if (!domainDnsObj) throw new Error('Unknow domain DNS ' + domainDns + '!')
 
     switch (domainDnsObj.provider) {
-    case 'alidns': {
-      const instance = new ProviderAli(domainDnsObj)
-
-      return instance
-    }
+    case 'alidns':
+      return new ProviderAli(domainDnsObj)
+    case 'cloudflaredns':
+      return new ProviderCloudflare(domainDnsObj)
     }
   },
 

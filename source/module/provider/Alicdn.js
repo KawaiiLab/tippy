@@ -1,5 +1,4 @@
-// https://github.com/mrabit/alidns-nodejs/blob/master/alidns.js
-
+const sha1 = require('sha1')
 const request = require('request')
 const copy = require('copy-to')
 const crypto = require('crypto')
@@ -35,18 +34,12 @@ module.exports = ALICDN
 
 const proto = ALICDN.prototype
 
-proto.deployCert = function (domain, serverCertificate, privateKey) {
-  // API概览 :
-  // https://help.aliyun.com/document_detail/29740.html
-  return new Promise((resolve, reject) => {
+proto.deployCert = function (domain, certName, serverCertificate, privateKey) {
+  const certNameHash = certName + '_' + sha1(serverCertificate).substr(0, 8)
+  return (new Promise((resolve, reject) => {
     this.queryData({
-      Action: 'SetDomainServerCertificate',
-      DomainName: domain,
-      ServerCertificateStatus: 'on',
-      CertType: 'upload',
-      ServerCertificate: serverCertificate,
-      PrivateKey: privateKey,
-      ForceSet: '1'
+      Action: 'DescribeDomainCertificateInfo',
+      DomainName: domain
     }, function (err, res) {
       logger.debug(err, res)
       if (err) {
@@ -54,14 +47,38 @@ proto.deployCert = function (domain, serverCertificate, privateKey) {
         reject(new Error(err))
       }
 
-      resolve({ res })
+      if (res.CertInfos.CertInfo[0].CertName === certNameHash) resolve(true)
+      resolve(false)
+    })
+  })).then((bool) => {
+    return new Promise((resolve, reject) => {
+      if (bool) {
+        resolve()
+        return
+      }
+      this.queryData({
+        Action: 'SetDomainServerCertificate',
+        DomainName: domain,
+        ServerCertificateStatus: 'on',
+        CertType: 'upload',
+        CertName: certNameHash,
+        ServerCertificate: serverCertificate,
+        PrivateKey: privateKey,
+        ForceSet: '1'
+      }, function (err, res) {
+        logger.debug(err, res)
+        if (err) {
+          logger.error(err)
+          reject(new Error(err))
+        }
+
+        resolve({ res })
+      })
     })
   })
 }
 
 proto.queryData = function (conditions = {}, fn) {
-  // API概览 :
-  // https://help.aliyun.com/document_detail/29740.html
   this._request('GET', conditions, fn)
 }
 

@@ -1,5 +1,5 @@
 const config = require('./config')
-const DeployAli = require('./provider/alicdn')
+const DeployAli = require('./provider/Alicdn')
 
 module.exports = async (cdnData, certPem, keyPem) => {
   const providerList = config('cdnProvider')
@@ -11,7 +11,7 @@ module.exports = async (cdnData, certPem, keyPem) => {
     }
 
     if (!instance) throw new Error('Unknown provider type ' + provider.type)
-    await instance.deployCert(cdnData.domain, certPem, keyPem)
+    await instance.deployCert(cdnData.domain, cdnData.cert, certPem, keyPem)
   } else {
     throw new Error('Unknown provider ' + cdnData.provider)
   }

@@ -1,20 +1,8 @@
 const getRawBody = require('raw-body')
-const config = require('../module/config')
-const app = require('../app')
+const config = require('./source/module/config')
+const app = require('./source/main')
 
-module.exports = async (req, res, context) => {
-  if (req.queries.token && config('token').includes(req.queries.token)) {
-    if (req.queries.cron === 'true') {
-      await app.cronJob()
-      res.setStatusCode(200)
-      res.setHeader('content-type', 'application/json')
-      res.send(JSON.stringify({
-        status: 200
-      }))
-      return
-    }
-  }
-
+module.exports.handler = async (req, res, context) => {
   let body = await getRawBody(req)
   try {
     body = JSON.parse(body)
@@ -26,7 +14,7 @@ module.exports = async (req, res, context) => {
     res.setStatusCode(403)
     res.setHeader('content-type', 'application/json')
     res.send(JSON.stringify({
-      status: 403
+      code: -1
     }))
   }
 
@@ -34,7 +22,7 @@ module.exports = async (req, res, context) => {
   res.setStatusCode(200)
   res.setHeader('content-type', 'application/json')
   res.send(JSON.stringify({
-    status: 200,
+    code: 0,
     certPem: certInfo.certPem,
     keyPem: certInfo.keyPem
   }))

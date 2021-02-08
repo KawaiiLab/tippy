@@ -1,29 +1,29 @@
 {
   "name": "certman",
   "version": "1.0.0",
-  "description": "## 简介",
-  "main": "app.js",
+  "description": "🔒 Deploy LE cert in a kawaii way",
+  "main": "app-ali_cron.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/isXiaoLin/CertMan.git"
+    "url": "git+https://github.com/kawaiilab/tippy.git"
   },
   "author": "XiaoLin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/isXiaoLin/CertMan/issues"
+    "url": "https://github.com/kawaiilab/tippy/issues"
   },
-  "homepage": "https://github.com/isXiaoLin/CertMan#readme",
+  "homepage": "https://github.com/kawaiilab/tippy#readme",
   "devDependencies": {
     "eslint": "^7.3.1",
-    "eslint-plugin-markdown": "^1.0.2",
     "pkg": "^4.4.9",
     "standard": "^14.3.4"
   },
   "dependencies": {
-    "acme-client": "^4.0.0",
+    "acme-client": "^4.1.2",
+    "cloudflare": "^2.7.0",
     "copy-to": "^2.0.1",
     "crypto": "^1.0.1",
     "fs": "0.0.1-security",
@@ -33,6 +33,7 @@
     "randomstring": "^1.1.5",
     "raw-body": "^2.4.1",
     "replace-last": "^1.2.6",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "sha1": "^1.1.1"
   }
 }

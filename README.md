@@ -1,128 +1,149 @@
-# CertMan
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/20554060/107155056-35f04a00-69b1-11eb-9597-1f8596e44924.png">
+</p>
 
-## 简介
+<p align="center">🔒 Deploy LE cert in a kawaii way</p>
 
-最近 Alpha 泛域名快绝版了, 为了方便以后的证书签发及部署, 就自己写了一个 LE 证书签发与部署程序
+<p align="center">
+<a href="https://lyn.moe"><img alt="Author" src="https://img.shields.io/badge/Author-Lyn-blue.svg?style=for-the-badge"/></a>
+<a href="https://github.com/kawaiilab/tippy"><img alt="Version" src="https://img.shields.io/github/package-json/v/kawaiilab/tippy?style=for-the-badge"/></a>
+<img alt="License" src="https://img.shields.io/github/license/kawaiilab/tippy.svg?style=for-the-badge"/>
+</p>
 
-看了下发现现在的 LE 自动签发都是单点使用, 而且提供的服务也不是很符合国情(误), 所以这玩意儿大概不算疯狂造轮子? (小声
+***
 
-~~目前程序还在开始阶段, 仅有签发功能, ~~客户端及~~主动推送还没写(咕咕咕), 如果有菊苣发现有什么问题或者可以改进的地方还望多多指教~~
+## Usage
 
-最近重写了一遍, 支持了主动推动到阿里云 CDN
+### Aliyun Function Computing
 
-欢迎 PR 新的 DNS Provider 哦~ (逃
+1. Select a region that not in China Mainland
+2. Create a VPC network([console](https://vpc.console.aliyun.com/vpc/cn-hongkong/vpcs)) and a NAS bucket([console](https://nasnext.console.aliyun.com/cn-hongkong/filesystem)), please ensure they are in the same available-region
+3. Enter [Function Computing console](fc.console.aliyun.com)
+4. Select `Service`
+    - If you don't have an existing service/function, system will guide you to create a new one
+    - While creating function, select template `Event function`
+    - While configuring function, please fill as follow:
+        - Name: `cron`
+        - Runtime: `Node.JS 12.x`
+        - Upload Code: `Source pack upload`
+        - Function entry: `app-ali_cron.handler`
+        - Memory: `128MB`
+        - Timeout: `600s`
+5. Enter the service you created, select `Service Configuration` and click `Edit configuration`
+    - In `Network Configuring`
+        - Allow function access internet: `True`
+        - Allow function access resoucres in VPC: `True`
+        - Configure the VPC settings
+    - In `NAS File System`, `NAS Mount Point`
+        - Dir: select the NAS you created before
+        - Remote Dir: `/`
+        - Local Dir: `/mnt/cert`
+    - In `Permission Configuring`, create a new role which includes follow
+        - `AliyunVPCFullAccess`
+        - `AliyunNASFullAccess`
+        - `AliyunFCFullAccess`
+        - `AliyunECSNetworkInterfaceManagementAccess`
+    - Save configuration
+6. Enter the function `cron`, setect `Code running` and click `Online editing`
+    - Rename `config.example.js` to `config.js` and open it
+    - Fill the file (certPath: `/mnt/cert`, other instructions please see [Configuration](#Configuration))
+    - Click Save & Execute
+7. Back to `service` page, create a new function same as above with the name `http`, and enter the function
+    - Update function entry from `app-ali_cron.handler` to `app-ali_http.handler`
+    - Copy the config.js file from cron function to http function
+    - Now you can access your Tippy instance by post JSON object {"token": "your_token", "certName": "my_cert"} to the endpoint(like `https://12345678.cn-hongkong.fc.aliyuncs.com/2016-08-15/proxy/Tippy/http/`) to get the latest cert you request
+8. Enjoy~
 
-## Feautres
+### API
 
-- [x] 自动签发/更新证书
-- [x] 泛域名支持
-- [x] 客户端及客户端 API
-- [x] 主动推送至 CDN 服务商
+```
+POST https://12345678.cn-hongkong.fc.aliyuncs.com/2016-08-15/proxy/Tippy/http/
+{
+  "token": "your_token",
+  "certName": "my_cert"
+}
 
-## TODO
+Response:
+{
+  "code": 0,
+  "certPem": "-----BEGIN CERTIFICATE-----\n....",
+  "keyPem": "-----BEGIN RSA PRIVATE KEY-----\n...."
+}
+{
+  "code": -1
+}
+```
 
-- [x] 阿里函数计算支持
-- [x] 阿里 DNS 支持
-- [ ] DNSPods 支持
-- [x] 阿里 CDN 支持
-- [ ] 腾讯 CDN 支持
+## Configuration
 
-## Quick Start
-
-### 需求
-- 阿里云账户 (阿里云函数计算提供免费额度, 正常来讲应该够用了)
-- 装了 Node JS 的服务器
-- 脑子
-
-### 服务端
-
-1. 打开[这里](https://fc.console.aliyun.com/fc/service/cn-hongkong/certman/functions), 在左上角选择新建服务并创建
-2. 进入服务, 点击 `新建函数` 创建函数
-    - 选择 `HTTP 函数`
-    - **运行环境** `nodejs12`
-    - **函数入口** `app_ali.handler`
-    - **超时时间至少** `120s`
-    - **单实例并发度** `2 或以上`
-    - **认证方式** `anonymous`
-    - **请求方式** `GET POST`
-3. 在服务管理的 `服务配置` 中修改配置
-    - 开启 `网络配置->允许函数访问 VPC 内资源`(需自行创建同地域下的 VPC) 并选择 VPC
-    - 在最下方 `NAS 文件系统` 中添加一个挂载点到 `/mnt/cert`(需自行创建同地域下的 NAS), 用户及用户组均填写 `10003`
-    - 提交配置并等待 30 秒
-4. 再次回到函数管理页面, 在代码执行中修改配置
-    - [本地完成]将本项目克隆到本地, 进入目录并运行 `npm install`
-    - [本地完成]将 `config.example.js` 复制为 `config.js` 并修改配置
-    - [本地完成]将根目录下的**所有文件及文件夹**压缩为 zip 格式的压缩包 (可使用命令 `zip -q -r app.zip *`)
-    - 在控制台中选择 `代码包上传`, 选择刚刚创建的压缩包并上传, 等待 30 秒
-    - 回到在线编辑, 打开 `config.js`, 将其中的 `certPath` 修改为 `/mnt/cert/cert` (即第 4 步中创建的挂载点)
-5. 为函数计算绑定自定义域名
-6. 使用类似 `UptimeRobot` 的服务每天或每半天访问一次 `https://{你的 URL}/?token={你的 token}&cron=true` 来运行定时任务
-7. Enjoy~
-
-### 客户端
-
-1. 拉取 `CertMan` 源码并在根目录执行 `npm i` 指令安装依赖
-2. 进入到 `client` 子文件夹创建并填写 `config.json`
-3. 使用 `crontab` 或类似工具创建定时任务执行 `client/app.js` 即可
-
-## 配置
-
-服务端
-```js
+```javascript
 module.exports = {
   logLevel: 'debug',
-  email: 'i@xiaol.in',
-  certPath: './cert',
+  email: 'i@lyn.moe',
+  certPath: '/mnt/cert',
   token: [
     'abc123!@#'
   ],
   dnsProvider: {
     ali: {
-      provider: 'alidns', // 只可选择 alidns
+      provider: 'alidns',
       accesskeyId: '',
       accesskeySecret: ''
+    },
+    cf: {
+      provider: 'cloudflaredns',
+      key: 'abc',
+      email: 'i@lyn.moe',
+      zoneId: {
+        'lyn.moe': 'abc'
+      }
     }
   },
   domainDnsMap: {
-    'cgl.li': 'ali' // 对应 dnsProvider 中的条目
+    'cgl.li': 'ali',
+    'lyn.moe': 'cf'
   },
   certs: {
     for_root: {
-      'cgl.li': [ // 对应 domainDnsMap 中的条目
+      'cgl.li': [
         'www',
+        '@'
+      ],
+      'lyn.moe': [
+        '*',
         '@'
       ]
     }
   },
   cdnProvider: {
     ali: {
-      type: 'alicdn', // 只可选择 alicdn
+      type: 'alicdn',
       accesskeyId: '',
       accesskeySecret: ''
     }
   },
   cdnCertMap: [
     {
-      provider: 'ali', // 对应 cdnProvider 中的条目
-      cert: 'for_root', // 对应 certs 中的键
-      domain: 'www.cgl.li' // CDN 中的域名名称(泛域名格式为 .example.com)
+      provider: 'ali',
+      cert: 'for_root',
+      domain: 'www.cgl.li'
     }
   ]
 }
+
 ```
 
-客户端
-```json
-{
-  "apiServer": "https://xxxx.cn-hongkong.fc.aliyuncs.com/2016-08-15/proxy/xxxx.xxxx/xxxx/",
-  "token": "testToken",
-  "reqList": [
-      {
-          "name": "for_root",
-          "certPath": "/usr/local/nginx/ssl/for_blog.pem",
-          "keyPath": "/usr/local/nginx/ssl/for_blog_key.pem",
-          "afterPull": "systemctl restart nginx"
-      }
-  ]
-}
-```
+- `dnsProvider` is for `domainDnsMap`, `cdnProvider` is for `cdnCertMap`
+- `dnsProvider` is used to deploy cert to CDN services, in which `provider` stands for `cdnProvider{}`, cert stands for `certs{}`, domain stands for the domain you configured in CDN Provider
+
+### Credit
+
+[Illustration: Tippy but Cube](https://dewo-art.tumblr.com/post/184175945061/tippy-but-cube)
+
+### Name
+
+[Tippy](https://myanimelist.net/character/103091/Tippy) from [Gochuumon wa Usagi Desu ka?](https://myanimelist.net/anime/21273/Gochuumon_wa_Usagi_Desu_ka)
+
+### LICENSE
+
+MIT

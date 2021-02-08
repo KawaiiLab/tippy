@@ -1,6 +1,6 @@
 module.exports = {
   logLevel: 'debug',
-  email: 'i@xiaol.in',
+  email: 'i@lyn.moe',
   certPath: './cert',
   token: [
     'abc123!@#'
@@ -10,15 +10,28 @@ module.exports = {
       provider: 'alidns',
       accesskeyId: '',
       accesskeySecret: ''
+    },
+    cf: {
+      provider: 'cloudflaredns',
+      key: 'abc',
+      email: 'i@lyn.moe',
+      zoneId: {
+        'lyn.moe': 'abc'
+      }
     }
   },
   domainDnsMap: {
-    'cgl.li': 'ali'
+    'cgl.li': 'ali',
+    'lyn.moe': 'cf'
   },
   certs: {
     for_root: {
       'cgl.li': [
         'www',
+        '@'
+      ],
+      'lyn.moe': [
+        '*',
         '@'
       ]
     }

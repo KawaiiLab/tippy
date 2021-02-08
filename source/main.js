@@ -12,7 +12,7 @@ module.exports = {
     for (const index in list) {
       const certData = list[index]
       const hash = objectHash(certData)
-      const certPath = path.resolve(config('certPath', './cert'), `${hash}/`)
+      const certPath = path.resolve(config('certPath', path.resolve(__dirname, '/../cert')), `${hash}/`)
       if (fs.existsSync(path.join(certPath, 'info.json'))) {
         const certData = JSON.parse(fs.readFileSync(path.join(certPath, 'info.json')).toString())
 
@@ -40,7 +40,7 @@ module.exports = {
           keyPem
         }
       }
-    }
+    } else return null
   },
 
   async deployCert () {
