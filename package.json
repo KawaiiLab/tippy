@@ -22,7 +22,7 @@
     "standard": "^14.3.4"
   },
   "dependencies": {
-    "acme-client": "^4.1.2",
+    "acme-client": "^4.2.5",
     "cloudflare": "^2.7.0",
     "copy-to": "^2.0.1",
     "crypto": "^1.0.1",
